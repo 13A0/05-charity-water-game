@@ -75,7 +75,8 @@ function render() {
   }
   $("location").textContent = p.location.toUpperCase();
   $("project-title").textContent = p.name;
-  $("difficulty").textContent = `${p.difficulty} expedition`;
+  $("difficulty").textContent =
+    `${p.difficulty} · Expedition ${(p.stage ?? 0) + 1}`;
   $("produced").textContent = fmt(r.produced);
   $("goal").textContent = fmt(p.goal);
   $("wallet").textContent = fmt(r.wallet);
@@ -86,14 +87,21 @@ function render() {
     .querySelector(".progress")
     .setAttribute("aria-valuenow", Math.floor(percent));
   $("percent").textContent = `${Math.floor(percent)}%`;
-  $("objective").textContent = p.minPumps
-    ? `Field objective: ${Math.min(r.pumps, p.minPumps)} / ${p.minPumps} manual pumps`
-    : p.minUpgrades
-      ? `Field objective: ${Math.min(
-          Object.values(r.levels).reduce((a, b) => a + b, 0),
-          p.minUpgrades,
-        )} / ${p.minUpgrades} equipment levels`
-      : "Every drop brings the village to life.";
+  const objectives = [];
+  if (p.minPumps)
+    objectives.push(
+      `${Math.min(r.pumps, p.minPumps)} / ${p.minPumps} manual pumps`,
+    );
+  if (p.minUpgrades)
+    objectives.push(
+      `${Math.min(
+        Object.values(r.levels).reduce((a, b) => a + b, 0),
+        p.minUpgrades,
+      )} / ${p.minUpgrades} equipment levels`,
+    );
+  $("objective").textContent = objectives.length
+    ? `Field objectives: ${objectives.join(" · ")}`
+    : "Every drop brings the village to life.";
   $("conditions").textContent = p.condition;
   $("manual-rate").textContent = `${decimal(rates.tap)} L / pump`;
   $("auto-rate").textContent = `${decimal(rates.auto)} L / sec`;
@@ -245,10 +253,10 @@ function showProjects() {
   game.offers();
   persist();
   dialog.choices({
-    eyebrow: "YOUR NEXT CHAPTER / CHOOSE ONE OF THREE",
+    eyebrow: `EXPEDITION ${game.state.completed + 1} / CHOOSE ONE OF THREE`,
     title: "Where will you make a difference?",
     description:
-      "Knowledge and skills stay with you. Water, equipment, milestones and temporary effects start fresh.",
+      "Each success raises the water target. Objectives and conditions vary independently. Knowledge stays; temporary progress resets.",
     items: game.offers().map((p) => ({
       id: p.id,
       name: p.name,
@@ -354,7 +362,7 @@ function showSkills(back = "game") {
 function help() {
   menu = "help";
   dialog.show(
-    `<p class="eyebrow">YOUR FIELD GUIDE</p><h2>Make every drop count.</h2><ol class="guide"><li>Pump water by clicking the yellow button or pressing <b>Space</b>. Five pumps within 1.2 seconds build a ×1.5 streak.</li><li><b>Available water</b> buys equipment. <b>Contributed water</b> only increases. Equipment is temporary; experiment with combinations.</li><li>At 25%, 50% and 75%, select a free upgrade, then confirm it. All decisions pause production and timers.</li><li>Events change production or equipment costs. Read the trade-offs. Negative effects expire during active play; there is no game-over.</li><li>Fill the target and finish the field objective to earn permanent KP. Spend it in four connected skill branches, then choose a new expedition.</li><li>Projects can be replayed. Easy expeditions always remain available. Saves include your current run and pending choices.</li></ol><p>Press P to pause. Hidden tabs pause automatically; there is no offline production. Sounds and artwork are replaceable placeholders. Manual rate excludes combo and critical bonuses.</p><div class="dialog-actions"></div>`,
+    `<p class="eyebrow">YOUR FIELD GUIDE</p><h2>Make every drop count.</h2><ol class="guide"><li>Pump water by clicking the yellow button or pressing <b>Space</b>. Five pumps within 1.2 seconds build a ×1.5 streak.</li><li><b>Available water</b> buys equipment. <b>Contributed water</b> only increases. Equipment is temporary; experiment with combinations.</li><li>At 25%, 50% and 75%, select a free upgrade, then confirm it. All decisions pause production and timers.</li><li>Events change production or equipment costs. Read the trade-offs. Negative effects expire during active play; there is no game-over.</li><li>Fill the target and finish the field objective to earn permanent KP. Spend it in four connected skill branches, then choose a new expedition.</li><li>Projects can be replayed. Easy options stay gentler than the other offers, but all tiers grow with each completed expedition. Saves include your current run and pending choices.</li></ol><p>Press P to pause. Hidden tabs pause automatically; there is no offline production. Sounds and artwork are replaceable placeholders. Manual rate excludes combo and critical bonuses.</p><div class="dialog-actions"></div>`,
   );
   dialog.body
     .querySelector(".dialog-actions")
@@ -403,7 +411,7 @@ $("restart").onclick = () => {
     eyebrow: "START AGAIN / KEEP YOUR KNOWLEDGE",
     title: "A fresh start?",
     description:
-      "This expedition�s water, equipment and effects will reset. Permanent skills and knowledge stay with you.",
+      "This expeditionï¿½s water, equipment and effects will reset. Permanent skills and knowledge stay with you.",
     items: [
       {
         id: "restart",

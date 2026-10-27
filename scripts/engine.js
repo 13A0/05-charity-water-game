@@ -15,6 +15,7 @@ export const fresh = () => ({
   history: [],
   run: null,
   offers: [],
+  recentProjects: [],
 });
 export class Game {
   constructor(state = fresh(), random = Math.random) {
@@ -25,7 +26,10 @@ export class Game {
     return this.state.run;
   }
   get project() {
-    return projectDefinitions.find((p) => p.id === this.run?.project);
+    return (
+      this.run?.projectSnapshot ||
+      projectDefinitions.find((p) => p.id === this.run?.project)
+    );
   }
   permanent() {
     return progression.permanent(this);
@@ -38,9 +42,10 @@ export class Game {
   restart() {
     if (!this.run || this.run.mode === "complete" || this.run.pending)
       return false;
-    const id = this.run.project;
+    const snapshot = structuredClone(this.project);
+    const id = snapshot.id;
     this.state.run = null;
-    this.state.offers = [id];
+    this.state.offers = [snapshot];
     return this.start(id);
   }
 

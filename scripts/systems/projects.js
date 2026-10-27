@@ -1,26 +1,21 @@
+import { generateOffers } from "./project-generator.js";
 import { projects } from "../../data/content.js";
 
 export function offers(game) {
-  if (!game.state.offers.length) {
-    const eligible = projects.filter(
-      (p) =>
-        (!p.unlock || game.state.completed >= p.unlock) &&
-        (!p.skill || game.state.skills.includes(p.skill)),
-    );
-    game.state.offers = ["Easy", "Medium", "Hard"].map((difficulty) => {
-      const pool = eligible.filter((p) => p.difficulty === difficulty);
-      return pool[Math.floor(game.random() * pool.length)].id;
-    });
-  }
-  return game.state.offers.map((id) => projects.find((p) => p.id === id));
+  if (!game.state.offers.length)
+    game.state.offers = generateOffers(game.state, game.random);
+  return game.state.offers.map((p) =>
+    typeof p === "string" ? projects.find((t) => t.id === p) : p,
+  );
 }
 
 export function start(game, id) {
   if (game.run && game.run.mode !== "complete") return false;
-  if (!game.offers().some((p) => p.id === id)) return false;
-  const p = projects.find((p) => p.id === id);
+  const p = game.offers().find((p) => p.id === id);
+  if (!p) return false;
   game.state.run = {
-    project: id,
+    project: p.templateId || p.id,
+    projectSnapshot: structuredClone(p),
     mode: "running",
     wallet: game.permanent().starting || 0,
     produced: 0,
@@ -61,8 +56,10 @@ export function complete(game) {
   r.reward = game.project.kp + (game.permanent().kp || 0);
   game.state.points += r.reward;
   game.state.completed++;
+  game.state.offers = [];
   game.state.history.unshift({
     project: r.project,
+    expedition: game.project.id,
     time: r.elapsed,
     water: r.produced,
     kp: r.reward,

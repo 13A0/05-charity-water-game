@@ -5,6 +5,7 @@ import { validate, load, save, KEY } from "../scripts/save.js";
 import { projects, skills, events } from "../data/content.js";
 const newGame = () => {
   const g = new Game(fresh(), () => 0.1);
+  g.state.offers = ["village"];
   g.start("village");
   return g;
 };
@@ -48,6 +49,7 @@ test("prerequisites, costs, permanent builds and project reset", () => {
   g.run.effects.push({ name: "test", production: 0.5, left: 10 });
   g.add(1000, "manual");
   rewards(g);
+  g.state.offers = ["mountain"];
   assert(g.start("mountain"));
   assert.equal(g.run.wallet, 80);
   assert.deepEqual(g.run.effects, []);
@@ -72,7 +74,7 @@ test("all projects enforce conditions and objectives without losing a path forwa
     g.run.levels.handle = p.minUpgrades || 0;
     g.check();
     assert.equal(g.run.mode, "complete");
-    assert(g.offers().some((p) => p.id === "village"));
+    assert(g.offers().some((p) => p.difficulty === "Easy"));
   }
 });
 test("penalties modify rates, expire exactly, and freeze during decisions", () => {

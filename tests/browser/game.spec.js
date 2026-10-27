@@ -55,11 +55,14 @@ test("desktop: project choice, pumping, shop, all milestones, completion and per
     .click();
   await page.getByRole("button", { name: "Choose next expedition →" }).click();
   await choose(page, 1);
-  await expect(page.locator("#project-title")).toHaveText("Above the clouds");
-  await expect(page.locator("#manual-rate")).toHaveText("9.4 L / pump");
+  await expect(page.locator("#difficulty")).toContainText("Expedition 2");
+  const title = await page.locator("#project-title").textContent();
+  const rate = await page.locator("#manual-rate").textContent();
+  await expect(page.locator("#goal")).toHaveText("3,425");
   await expect(page.locator("#produced")).toHaveText("0");
   await page.reload();
-  await expect(page.locator("#project-title")).toHaveText("Above the clouds");
+  await expect(page.locator("#project-title")).toHaveText(title);
+  await expect(page.locator("#manual-rate")).toHaveText(rate);
   await expect(page.locator("#pause")).toHaveText("Resume →");
   expect(errors).toEqual([]);
 });
@@ -148,6 +151,7 @@ test("event decisions apply real effects, restore from saves and restart safely"
   page,
 }) => {
   const g = new Game();
+  g.state.offers = ["village"];
   g.start("village");
   g.triggerEvent("failure");
   await page.addInitScript((state) => {
@@ -179,6 +183,7 @@ test("held mouse during automatic milestone cannot activate a choice", async ({
   page,
 }) => {
   const g = new Game();
+  g.state.offers = ["village"];
   g.start("village");
   g.run.produced = 245;
   g.run.wallet = 245;

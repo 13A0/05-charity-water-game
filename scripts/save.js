@@ -1,3 +1,4 @@
+import { validateGenerated } from "./systems/project-generator.js";
 import { fresh } from "./engine.js";
 import {
   skills,
@@ -27,12 +28,33 @@ export function validate(s) {
     throw Error("Invalid progression");
   if (
     !Array.isArray(s.offers) ||
-    !s.offers.every((id) => projects.some((p) => p.id === id)) ||
+    !s.offers.every((p) =>
+      typeof p === "string"
+        ? projects.some((t) => t.id === p)
+        : !!validateGenerated(p),
+    ) ||
     !Array.isArray(s.history)
   )
     throw Error("Invalid project list");
+  s.recentProjects ??= [];
+  if (
+    !Array.isArray(s.recentProjects) ||
+    s.recentProjects.length > 18 ||
+    !s.recentProjects.every((x) => typeof x === "string" && x.length < 200)
+  )
+    throw Error("Invalid generation history");
   const r = s.run;
   if (r) {
+    if (r.projectSnapshot) {
+      if (r.projectSnapshot.templateId) validateGenerated(r.projectSnapshot);
+      else if (
+        JSON.stringify(r.projectSnapshot) !==
+        JSON.stringify(projects.find((p) => p.id === r.project))
+      )
+        throw Error("Invalid legacy project");
+      if ((r.projectSnapshot.templateId || r.projectSnapshot.id) !== r.project)
+        throw Error("Mismatched project");
+    }
     if (
       !projects.some((p) => p.id === r.project) ||
       !["running", "paused", "complete"].includes(r.mode)

@@ -188,6 +188,7 @@ export const skills = [
     effect: { access: 1 },
   },
 ];
+// Frozen legacy templates: retained for existing saves. New offers use project-archetypes.js.
 export const projects = [
   {
     id: "village",
