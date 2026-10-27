@@ -1,369 +1,180 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="description" content="Pump water, build upgrades, and complete clean-water projects in this student game prototype.">
-    <title>
-      Pump It | charity: water game
-    </title>
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#183d35" />
+    <meta
+      name="description"
+      content="An incremental clean-water expedition. Build, adapt, and bring water to communities."
+    />
+    <title>Pump It! — Every drop changes a world</title>
+    <link rel="stylesheet" href="styles/game.css" />
   </head>
   <body>
-    <!-- Brand artwork comes from the supplied img/ folder. -->
-    <header>
-      <a class="brand" href="https://www.charitywater.org" target="_blank" rel="noopener">
-        <img src="img/cw_logo_horizontal.png" alt="charity: water" width="250" height="31">
-      </a>
-      <span class="prototype">
-        THE CLEAN-WATER CLICKER
-      </span>
-      <button id="sound" class="quiet" aria-pressed="false">
-        Sound off
-      </button>
-      <button id="help" class="quiet">
-        How to play ↗
-      </button>
+    <header class="topbar">
+      <a href="https://www.charitywater.org" target="_blank" rel="noopener"
+        ><img src="img/cw_logo_horizontal.png" alt="charity: water" /></a
+      ><span class="edition">FIELD NOTES / VOL. 02</span>
+      <nav>
+        <button id="sound" class="quiet" aria-pressed="false">Sound off</button
+        ><button id="help" class="quiet">Field guide ↗</button>
+      </nav>
     </header>
     <main>
-      <div class="intro">
+      <section class="intro">
         <div>
-          <p class="eyebrow">
-            BUILD A BETTER TOMORROW
-          </p>
-          <h1>
-            PUMP IT
-            <span>
-              !
-            </span>
-          </h1>
-          <p>
-            Bring your village to life. One drop at a time.
-          </p>
+          <p class="eyebrow">SMALL ACTIONS. LASTING CHANGE.</p>
+          <h1>Pump it<span>!</span></h1>
+          <p>Every drop changes a world.</p>
         </div>
-        <div class="knowledge">
-          <span>
-            ✦
-            <b id="points">
-              0
-            </b>
-            knowledge
-          </span>
-          <button id="permanent" class="quiet">
-            Boost future taps · 1 point
-          </button>
-          <small id="permanent-level">
-            Permanent boost: +0 / tap
-          </small>
-        </div>
-      </div>
-      <!-- Main game board and upgrade shop. CSS stacks these on mobile. -->
-      <div class="game-grid">
-        <section class="game-card">
-          <div class="project-head">
+        <button id="skills" class="knowledge">
+          <span class="knowledge-icon">✦</span
+          ><span
+            ><small>YOUR KNOWLEDGE</small
+            ><strong
+              ><b id="kp">0</b> KP <span>Explore skill tree ↗</span></strong
+            ></span
+          >
+        </button>
+      </section>
+      <div class="game-layout">
+        <section class="expedition">
+          <div class="project-header">
             <div>
-              <p class="eyebrow" id="project-number">
-                PROJECT 01
-              </p>
-              <h2 id="project-title">
-                The first flow
-              </h2>
+              <p class="eyebrow" id="location">SUNRISE VILLAGE</p>
+              <h2 id="project-title">The first flow</h2>
             </div>
-            <span class="badge" id="status">
-              READY TO PUMP
-            </span>
+            <span class="badge" id="difficulty">Easy expedition</span>
           </div>
-          <div class="stats">
+          <div class="progress-header">
             <div>
-              <span>
-                WATER PRODUCED
-              </span>
-              <strong>
-                <b id="score">
-                  0
-                </b>
-                <small>
-                  /
-                  <span id="goal">
-                    1,000
-                  </span>
-                </small>
-              </strong>
+              <small>WATER CONTRIBUTED</small
+              ><strong
+                ><span id="produced">0</span
+                ><span class="muted">
+                  / <span id="goal">1,000</span> L</span
+                ></strong
+              >
             </div>
-            <div class="time">
-              <span>
-                TIME ELAPSED
-              </span>
-              <strong id="timer">
-                00:00
-              </strong>
+            <div class="progress-time">
+              <small>FIELD TIME</small><b id="time">00:00</b>
             </div>
           </div>
-          <div class="progress" role="progressbar" aria-label="Project water collected" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-            <div id="fill">
-            </div>
+          <div
+            class="progress"
+            role="progressbar"
+            aria-label="Project completion"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <div id="progress-fill"></div>
           </div>
-          <div class="progress-label">
-            <span id="progress-text">
-              Your first drop is the beginning.
-            </span>
-            <b id="percent">
-              0%
-            </b>
+          <div class="progress-caption">
+            <span id="objective">A new beginning, one drop at a time.</span
+            ><b id="percent">0%</b>
           </div>
-          <!-- Decorative scenery uses CSS. JavaScript updates the tank and homes. -->
-          <div class="scene">
-            <div class="game-hud">
-              <span class="location-tag">
-                SUNRISE VILLAGE
-              </span>
-              <span id="combo" class="combo">
-                STREAK · 0 / 5
-              </span>
+          <div class="scene" id="scene">
+            <div class="scene-top">
+              <span class="scene-label" id="status"
+                >READY FOR YOUR FIRST EXPEDITION</span
+              ><span id="streak">FIND YOUR FLOW · 0 / 5</span>
             </div>
-            <div class="landscape" aria-hidden="true">
-              <div class="mountain mountain-one">
-              </div>
-              <div class="mountain mountain-two">
-              </div>
-              <div class="field">
-              </div>
-              <div class="path">
-              </div>
-              <div class="tree tree-one">
-              </div>
-              <div class="tree tree-two">
-              </div>
-              <div class="village">
-                <div class="house house-one">
-                  <i>
-                  </i>
-                  <b>
-                  </b>
-                </div>
-                <div class="house house-two">
-                  <i>
-                  </i>
-                  <b>
-                  </b>
-                </div>
-                <div class="house house-three">
-                  <i>
-                  </i>
-                  <b>
-                  </b>
-                </div>
-              </div>
-              <div class="tank">
-                <div id="tank-water">
-                </div>
-                <span>
-                  WATER
-                  <br>
-                  TANK
-                </span>
-                <div class="tank-lines">
-                </div>
-              </div>
-              <div class="solar-array">
-                <i>
-                </i>
-                <i>
-                </i>
-                <i>
-                </i>
-                <i>
-                </i>
-              </div>
+            <img
+              class="village"
+              id="village"
+              alt="Placeholder village, gradually restored"
+            />
+            <div
+              class="pump-sprite"
+              id="pump-sprite"
+              role="img"
+              aria-label="Water pump placeholder"
+            ></div>
+            <img class="water-effect" id="water-effect" alt="" /><img
+              class="can"
+              src="img/water-can-transparent.png"
+              alt="Yellow water can"
+            />
+            <div id="floats" aria-hidden="true"></div>
+            <div class="pump-control">
+              <button id="pump">Pump water <span>+10 L / pump</span></button
+              ><small
+                >CLICK OR <kbd>SPACE</kbd> · FIVE STEADY PUMPS BUILD A
+                COMBO</small
+              >
             </div>
-            <div class="sun">
-            </div>
-            <div class="hill h1">
-            </div>
-            <div class="hill h2">
-            </div>
-            <div class="cloud c1">
-            </div>
-            <div class="cloud c2">
-            </div>
-            <svg class="pump-art" viewBox="0 0 460 310" aria-hidden="true">
-              <ellipse cx="225" cy="274" rx="150" ry="19" fill="#d0bd8f"/>
-              <path d="M100 266 L140 249 H306 L340 266 V282 H100Z" fill="#e7dbc1" stroke="#a99b7e" stroke-width="3"/>
-              <path d="M195 244V111Q195 94 210 94H232V125H219V244" fill="#338f8f" stroke="#193f45" stroke-width="6"/>
-              <path d="M214 124H270Q288 124 288 142V159H268V148H214" fill="#63b6ac" stroke="#193f45" stroke-width="6"/>
-              <rect x="179" y="232" width="61" height="18" rx="5" fill="#23585a"/>
-              <path d="M213 95V71" stroke="#193f45" stroke-width="9"/>
-              <g id="handle">
-                <path d="M211 72L131 48" stroke="#193f45" stroke-width="11" stroke-linecap="round"/>
-                <path d="M132 48L94 37" stroke="#f7c52e" stroke-width="16" stroke-linecap="round"/>
-              </g>
-              <circle cx="212" cy="74" r="9" fill="#f7c52e" stroke="#193f45" stroke-width="4"/>
-              <g class="water-stream">
-                <path d="M279 166V216" stroke="#58b7dc" stroke-width="7" stroke-linecap="round" stroke-dasharray="8 12"/>
-              </g>
-              <path d="M152 259L146 235M151 258L163 239M351 265L358 244" stroke="#778e51" stroke-width="4" stroke-linecap="round"/>
-            </svg>
-            <img class="game-can" src="img/water-can-transparent.png" alt="Yellow water can at the pump">
-            <div id="floats" aria-hidden="true">
-            </div>
-            <button id="pump" class="pump-button" disabled>
-              Pump water
-              <span>
-                +
-                <b id="tap-button">
-                  10
-                </b>
-                / tap
-              </span>
-            </button>
-            <p class="keyboard">
-              <kbd>
-                Space
-              </kbd>
-              pump ·
-              <kbd>
-                P
-              </kbd>
-              pause
-            </p>
+            <span class="art-label">PLACEHOLDER ART / REPLACEABLE ASSETS</span>
           </div>
           <div class="production">
-            <span>
-              ↗
-              <b id="tap">
-                10
-              </b>
-              water / tap
-            </span>
-            <span>
-              ◷
-              <b id="auto">
-                0
-              </b>
-              water / second
-            </span>
-          </div>
-          <div class="controls">
-            <button id="start" class="primary">
-              Start project →
-            </button>
-            <button id="restart" class="quiet">
-              Restart
-            </button>
-          </div>
-          <div id="event" class="event" hidden>
             <div>
-              <b>
-                Clogged filter!
-              </b>
-              <p>
-                Production is halved for
-                <span id="event-time">
-                  10
-                </span>
-                s. Clear it with 3 taps.
-              </p>
+              <span class="rate-symbol">↗</span
+              ><span
+                ><small>BY HAND</small><b id="manual-rate">10 L / pump</b></span
+              >
             </div>
-            <button id="repair">
-              Clear filter (0/3)
-            </button>
+            <div>
+              <span class="rate-symbol auto">☀</span
+              ><span
+                ><small>BY MACHINE</small><b id="auto-rate">0 L / sec</b></span
+              >
+            </div>
+            <button id="pause" class="quiet">Start expedition →</button>
+          </div>
+          <div id="effects" class="effects"></div>
+          <div class="conditions">
+            <span>FIELD CONDITIONS</span>
+            <p id="conditions">Stable ground · standard production</p>
+            <button id="restart" class="quiet">Restart</button>
           </div>
         </section>
-        <!-- Upgrade buttons are created from the upgrades array in script.js. -->
         <aside>
-          <section class="upgrade-panel">
-            <div class="panel-heading">
-              <h2>
-                Upgrade shop
-              </h2>
-              <span>
-                ↗
-              </span>
+          <section class="workshop">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">BUILD YOUR MOMENTUM</p>
+                <h2>The workshop</h2>
+              </div>
+              <span>↗</span>
             </div>
-            <p>
-              Better gear. More water. Bigger possibilities.
-            </p>
             <div class="wallet">
-              <span>
-                AVAILABLE WATER
-              </span>
-              <strong id="wallet">
-                0
-              </strong>
+              <div>
+                <small>AVAILABLE TO SPEND</small
+                ><strong><span id="wallet">0</span> <small>L</small></strong>
+              </div>
+              <span class="water-symbol">◈</span>
             </div>
-            <div id="upgrades">
-            </div>
-            <p class="hint">
-              Spent water still counts toward your project goal.
-            </p>
+            <div id="upgrades"></div>
+            <p class="hint">Spend freely. Contributed water never decreases.</p>
           </section>
-          <section class="milestone-panel">
-            <p class="eyebrow">
-              A LITTLE EXTRA MOMENTUM
-            </p>
-            <h3>
-              Village milestones
-            </h3>
-            <p>
-              At 25%, 50%, and 75%, pick a free bonus for this project.
-            </p>
-            <div class="milestones">
-              <span id="mile-0">
-                25%
-              </span>
-              <span id="mile-1">
-                50%
-              </span>
-              <span id="mile-2">
-                75%
-              </span>
-            </div>
+          <section class="milestones">
+            <p class="eyebrow">GROWING TOGETHER</p>
+            <h3>Little steps. Big change.</h3>
+            <div id="milestones"></div>
+            <p>Choose a free field upgrade at each milestone.</p>
           </section>
-          <section class="purpose">
-            <img src="img/cw_logo.png" alt="" class="purpose-logo">
-            <div>
-              <h3>
-                Play with purpose.
-              </h3>
-              <p>
-                Clean water changes everything. Learn about the work behind the inspiration.
-              </p>
-              <a href="https://www.charitywater.org" target="_blank" rel="noopener">
-                Meet charity: water ↗
-              </a>
-            </div>
+          <section class="journal">
+            <p class="eyebrow">EXPEDITION JOURNAL</p>
+            <div id="journal">The well is ready. Your story starts here.</div>
           </section>
         </aside>
       </div>
-      <div class="mission-tip">
-        <b>
-          YOUR MISSION
-        </b>
-        <span>
-          Fill the tank and restore the village water supply.
-        </span>
+      <div class="bottom-line">
+        <p id="notice" role="status">Your first drop is the beginning.</p>
+        <span id="save-status">Saved locally · no account needed</span>
       </div>
-      <p id="notice" role="status" aria-live="polite">
-        Ready when you are. Start your first project.
-      </p>
+      <footer>
+        <span>A little game about a big possibility.</span
+        ><a href="https://www.charitywater.org" target="_blank" rel="noopener"
+          >Discover the real-world mission ↗</a
+        ><small
+          >Independent educational prototype · fictional water units</small
+        >
+      </footer>
     </main>
-    <footer>
-      <span>
-        charity: water
-        <b>
-          ×
-        </b>
-        Pump It
-      </span>
-    </footer>
-    <!-- One accessible dialog is reused for instructions, bonuses, and results. -->
-    <dialog id="modal" aria-label="Game menu">
-      <div id="modal-body">
-      </div>
+    <dialog id="dialog" aria-label="Expedition decisions">
+      <div class="dialog-body"></div>
     </dialog>
-    <div id="confetti" aria-hidden="true">
-    </div>
-    <script src="script.js">
-    </script>
+    <script type="module" src="scripts/main.js"></script>
   </body>
 </html>
