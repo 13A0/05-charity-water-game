@@ -124,3 +124,13 @@ Objectives include supply delivery, manual participation, equipment installation
 The generator avoids the last 18 offered location/objective/condition combinations, preferring distinct conditions and distinct locations within each set. If a configurable pool is exhausted, it reuses the least-recent combination; its water requirement still advances. Restarting does not increase difficulty or reroll conditions. Offers and active recipes are saved exactly, so reopening menus or reloading cannot reroll them. Existing active projects and old saved offers retain their original requirements; newly generated sets use the new progression.
 
 Add locations without copying mechanical modifiers. Add objective/condition definitions with stable IDs and appropriate unlock levels and weights. Keep at least three initially available locations. New objective kinds require matching goal construction and completion checks. Do not change old recipe definitions in a shipped save version without a migration: saved numeric requirements are checked against their recipe to reject corrupted state.
+
+## Maintenance and performance
+
+The browser controller in `scripts/main.js` handles commands and menus. `ui/game-view.js` owns HUD rendering and caches its DOM references; `ui/format.js` shares number/time formatters. Automatic HUD updates run at 10 Hz, while clicks, purchases and new decisions render immediately. Paused/menu screens skip recurring HUD work. Milestones, effects and journal lists rebuild only when their visible content changes. Input-guard polling runs only while a dialog is waiting to become interactive.
+
+The simulation remains independent of the HUD refresh rate. It integrates at effect, streak and event boundaries, so changing frame duration cannot extend a production bonus or generate extra water before an event. Unchanged successful save payloads skip localStorage writes; failed writes are retried normally. Save validation checks milestone accounting and supports new generated locations independently of frozen legacy templates.
+
+Project generation filters compact recipes, then builds only the three chosen display objects. The candidate ordering and random selection behavior are preserved. A local 200-set benchmark improved from approximately 1.94 seconds to 0.14 seconds; this is a machine-specific measurement, not a browser-wide performance guarantee.
+
+Run `npm test`, `npm run test:browser`, and `npm run format:check` when changing gameplay or rendering. Regression coverage includes timing boundaries, corrupted milestone queues, save-write retries, new-location persistence, and stable paused HUD nodes in addition to the existing progression/input tests.

@@ -6,6 +6,9 @@ import * as production from "./systems/production.js";
 import * as progression from "./systems/progression.js";
 import * as projects from "./systems/projects.js";
 import * as events from "./systems/events.js";
+const regularEvents = eventDefinitions.filter((event) => !event.followupOnly);
+const EPSILON = 1e-8;
+const STREAK_SECONDS = 1.2;
 export const fresh = () => ({
   version: 2,
   points: 0,
@@ -65,8 +68,9 @@ export class Game {
   }
 
   buy(id) {
-    if (this.blocked || this.run.wallet < this.cost(id)) return false;
-    this.run.wallet -= this.cost(id);
+    const price = this.cost(id);
+    if (this.blocked || this.run.wallet < price) return false;
+    this.run.wallet -= price;
     this.run.levels[id] = (this.run.levels[id] || 0) + 1;
     this.check();
     return true;
@@ -78,7 +82,8 @@ export class Game {
   pump() {
     if (this.blocked) return null;
     const r = this.run;
-    r.streak = r.elapsed - r.lastTap <= 1.2 ? Math.min(5, r.streak + 1) : 1;
+    r.streak =
+      r.elapsed - r.lastTap <= STREAK_SECONDS ? Math.min(5, r.streak + 1) : 1;
     r.lastTap = r.elapsed;
     r.pumps++;
     const crit = this.random() < (this.permanent().crit || 0);
@@ -121,31 +126,41 @@ export class Game {
     return events.chooseEvent(this, index);
   }
 
+  queueDueEvent() {
+    if (this.blocked || this.run.elapsed + EPSILON < this.run.nextEvent)
+      return false;
+    const run = this.run;
+    const id =
+      run.followup ||
+      regularEvents[Math.floor(this.random() * regularEvents.length)].id;
+    run.followup = null;
+    return this.triggerEvent(id);
+  }
+
   tick(dt) {
     if (this.blocked || !Number.isFinite(dt) || dt <= 0) return;
     let remaining = Math.min(dt, 1);
-    while (remaining > 1e-8 && !this.blocked) {
-      const r = this.run,
-        step = Math.min(
-          remaining,
-          0.1,
-          ...r.effects.map((e) => Math.max(0.00001, e.left)),
-        );
+    while (remaining > EPSILON && !this.blocked) {
+      if (this.queueDueEvent()) break;
+      const run = this.run;
+      const streakLeft = run.lastTap + STREAK_SECONDS - run.elapsed;
+      if (streakLeft <= EPSILON) run.streak = 0;
+      // Integrate only to the next state change, so frame size cannot extend bonuses.
+      let step = Math.min(remaining, 0.1, run.nextEvent - run.elapsed);
+      if (run.streak > 0) step = Math.min(step, streakLeft);
+      for (const effect of run.effects)
+        if (effect.left > EPSILON) step = Math.min(step, effect.left);
+      if (run.effects.some((effect) => effect.left <= EPSILON))
+        run.effects = run.effects.filter((effect) => effect.left > EPSILON);
       const rate = this.rates().auto;
-      r.elapsed += step;
-      if (r.elapsed - r.lastTap > 1.2) r.streak = 0;
-      r.effects = r.effects
-        .map((e) => ({ ...e, left: e.left - step }))
-        .filter((e) => e.left > 1e-8);
+      run.elapsed += step;
+      for (const effect of run.effects) effect.left -= step;
+      if (run.effects.some((effect) => effect.left <= EPSILON))
+        run.effects = run.effects.filter((effect) => effect.left > EPSILON);
+      if (run.elapsed - run.lastTap >= STREAK_SECONDS - EPSILON) run.streak = 0;
       this.add(rate * step, "auto");
       remaining -= step;
-      if (!this.blocked && r.elapsed >= r.nextEvent) {
-        const pool = eventDefinitions.filter((e) => !e.followupOnly);
-        const id =
-          r.followup || pool[Math.floor(this.random() * pool.length)].id;
-        r.followup = null;
-        this.triggerEvent(id);
-      }
+      this.queueDueEvent();
     }
   }
   complete() {

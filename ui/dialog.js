@@ -64,7 +64,7 @@ export class Dialog {
       },
       true,
     );
-    this.timer = setInterval(() => {
+    this.tryArm = () => {
       if (
         this.element.open &&
         !this.armed &&
@@ -73,6 +73,8 @@ export class Dialog {
         performance.now() - this.lastInput > 450
       ) {
         this.armed = true;
+        clearInterval(this.timer);
+        this.timer = null;
         this.body
           .querySelectorAll("[data-guard]")
           .forEach((b) => (b.disabled = b.dataset.unavailable === "true"));
@@ -81,7 +83,11 @@ export class Dialog {
           hint.textContent =
             "Choose an option, then confirm. Your project is paused.";
       }
-    }, 80);
+    };
+  }
+  startGuardTimer() {
+    clearInterval(this.timer);
+    this.timer = setInterval(this.tryArm, 80);
   }
   ready() {
     return this.armed && performance.now() >= this.readyAt;
@@ -90,6 +96,7 @@ export class Dialog {
     this.epoch++;
     this.armed = false;
     this.readyAt = performance.now() + 650;
+    if (this.element.open) this.startGuardTimer();
     this.body
       .querySelectorAll("[data-guard]")
       .forEach((b) => (b.disabled = true));
@@ -98,6 +105,7 @@ export class Dialog {
     this.body.innerHTML = html;
     this.disarm();
     if (!this.element.open) this.element.showModal();
+    this.startGuardTimer();
     const heading = this.body.querySelector("h2");
     if (heading) {
       heading.tabIndex = -1;
@@ -105,6 +113,8 @@ export class Dialog {
     }
   }
   close() {
+    clearInterval(this.timer);
+    this.timer = null;
     this.element.close();
     this.epoch++;
     this.armed = false;

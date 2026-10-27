@@ -15,7 +15,8 @@ export function eventCost(game, choice) {
 
 export function chooseEvent(game, index) {
   const r = game.run;
-  if (r?.pending?.type !== "event") return false;
+  if (!Number.isInteger(index) || index < 0 || r?.pending?.type !== "event")
+    return false;
   const e = events.find((e) => e.id === r.pending.id),
     c = e.choices[index];
   if (
@@ -27,7 +28,7 @@ export function chooseEvent(game, index) {
   r.wallet -= game.eventCost(c);
   let effect = c.effect,
     outcome = c.name;
-  if (c.risk) {
+  if (c.risk !== undefined) {
     const success =
       game.random() <
       Math.min(

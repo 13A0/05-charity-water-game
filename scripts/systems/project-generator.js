@@ -93,6 +93,7 @@ export function generateOffers(state, random) {
     history = state.recentProjects || [],
     usedTypes = new Set(),
     usedConditions = new Set();
+  const recent = new Map(history.map((key, index) => [key, index]));
   const templates = projects.filter(
     (p) =>
       (!p.unlock || stage >= p.unlock) &&
@@ -123,26 +124,43 @@ export function generateOffers(state, random) {
     for (const t of templates.filter((t) => !usedTypes.has(t.id)))
       for (const o of objectives)
         for (const c of sets)
-          candidates.push(buildProject(t, tierIndex, stage, o, c));
+          candidates.push({
+            template: t,
+            objective: o,
+            conditions: c,
+            templateId: t.id,
+            objectiveId: o.id,
+            conditionIds: c.map((x) => x.id).sort(),
+          });
     // Prefer never/recently unoffered combinations. When exhausted, retire the oldest first.
-    const fresh = candidates.filter((p) => !history.includes(signature(p)));
+    const fresh = candidates.filter((p) => !recent.has(signature(p)));
     if (fresh.length) candidates = fresh;
     else {
       const oldest = Math.min(
-        ...candidates.map((p) => history.lastIndexOf(signature(p))),
+        ...candidates.map((p) => recent.get(signature(p))),
       );
       candidates = candidates.filter(
-        (p) => history.lastIndexOf(signature(p)) === oldest,
+        (p) => recent.get(signature(p)) === oldest,
       );
     }
     const varied = candidates.filter(
       (p) => !usedConditions.has(p.conditionIds.join("+")),
     );
     if (varied.length) candidates = varied;
+    if (!candidates.length)
+      throw Error(
+        "Project configuration must provide three eligible locations and valid objectives/conditions",
+      );
     const choice = pick(candidates, random);
     usedTypes.add(choice.templateId);
     usedConditions.add(choice.conditionIds.join("+"));
-    return choice;
+    return buildProject(
+      choice.template,
+      tierIndex,
+      stage,
+      choice.objective,
+      choice.conditions,
+    );
   });
   state.recentProjects = [...history, ...offers.map(signature)].slice(
     -rules.recentLimit,

@@ -222,3 +222,42 @@ test("pump art can be replaced through the manifest only", async ({ page }) => {
   await pumpClick(page);
   await expect(page.locator("#produced")).toHaveText("10");
 });
+
+test("paused HUD keeps list nodes and upgrades respond immediately", async ({
+  page,
+}) => {
+  await start(page);
+  await page.locator("#pause").click();
+  const result = await page.evaluate(async () => {
+    const milestone = document.querySelector("#milestones").firstChild;
+    const journal = document.querySelector("#journal").firstChild;
+    let mutations = 0;
+    const observer = new MutationObserver(
+      (records) => (mutations += records.length),
+    );
+    observer.observe(document.querySelector("#milestones"), {
+      childList: true,
+      subtree: true,
+    });
+    observer.observe(document.querySelector("#journal"), {
+      childList: true,
+      subtree: true,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    observer.disconnect();
+    return {
+      mutations,
+      sameMilestone:
+        milestone === document.querySelector("#milestones").firstChild,
+      sameJournal: journal === document.querySelector("#journal").firstChild,
+    };
+  });
+  expect(result).toEqual({
+    mutations: 0,
+    sameMilestone: true,
+    sameJournal: true,
+  });
+  await page.locator("#pause").click();
+  await pumpClick(page);
+  await expect(page.locator("#produced")).toHaveText("10");
+});

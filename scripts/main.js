@@ -1,13 +1,11 @@
+import { createGameView } from "../ui/game-view.js";
+import { fmt, decimal, time } from "../ui/format.js";
 import { Game } from "./engine.js";
-import { load, save } from "./save.js";
+import { load, createSaveWriter } from "./save.js";
 import { upgrades, rewards, skills, events } from "../data/content.js";
 import { AssetManager, AudioManager } from "./assets.js";
 import { Dialog } from "../ui/dialog.js";
-const $ = (id) => document.getElementById(id),
-  fmt = (n) => Math.floor(n).toLocaleString("en-US"),
-  decimal = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 1 }),
-  time = (n) =>
-    `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(Math.floor(n % 60)).padStart(2, "0")}`;
+const $ = (id) => document.getElementById(id);
 let storage;
 try {
   storage = window.localStorage;
@@ -32,8 +30,9 @@ let shown = null,
   saveTime = 0,
   pumpTimer;
 const notice = (text) => ($("notice").textContent = text);
+const writeSave = createSaveWriter(storage);
 function persist() {
-  const ok = save(storage, game.state);
+  const ok = writeSave(game.state);
   $("save-status").textContent = ok
     ? "Progress saved on this device"
     : "Saving unavailable — keep this tab open";
@@ -63,120 +62,8 @@ for (const u of upgrades) {
   };
   $("upgrades").append(button);
 }
-function render() {
-  const r = game.run,
-    p = game.project,
-    rates = game.rates();
-  $("kp").textContent = fmt(game.state.points);
-  $("pump").disabled = !r || game.blocked || dialog.element.open;
-  if (!r) {
-    $("pause").textContent = "Choose expedition →";
-    return;
-  }
-  $("location").textContent = p.location.toUpperCase();
-  $("project-title").textContent = p.name;
-  $("difficulty").textContent =
-    `${p.difficulty} · Expedition ${(p.stage ?? 0) + 1}`;
-  $("produced").textContent = fmt(r.produced);
-  $("goal").textContent = fmt(p.goal);
-  $("wallet").textContent = fmt(r.wallet);
-  $("time").textContent = time(r.elapsed);
-  const percent = Math.min(100, (r.produced / p.goal) * 100);
-  $("progress-fill").style.width = `${percent}%`;
-  document
-    .querySelector(".progress")
-    .setAttribute("aria-valuenow", Math.floor(percent));
-  $("percent").textContent = `${Math.floor(percent)}%`;
-  const objectives = [];
-  if (p.minPumps)
-    objectives.push(
-      `${Math.min(r.pumps, p.minPumps)} / ${p.minPumps} manual pumps`,
-    );
-  if (p.minUpgrades)
-    objectives.push(
-      `${Math.min(
-        Object.values(r.levels).reduce((a, b) => a + b, 0),
-        p.minUpgrades,
-      )} / ${p.minUpgrades} equipment levels`,
-    );
-  $("objective").textContent = objectives.length
-    ? `Field objectives: ${objectives.join(" · ")}`
-    : "Every drop brings the village to life.";
-  $("conditions").textContent = p.condition;
-  $("manual-rate").textContent = `${decimal(rates.tap)} L / pump`;
-  $("auto-rate").textContent = `${decimal(rates.auto)} L / sec`;
-  $("pump").querySelector("span").textContent =
-    `+${decimal(rates.tap * (r.streak >= 5 ? 1.5 + (game.permanent().combo || 0) : 1))} L / pump`;
-  $("status").textContent =
-    r.mode === "complete"
-      ? "CLEAN WATER IS FLOWING"
-      : dialog.element.open || r.mode === "paused"
-        ? "EXPEDITION PAUSED"
-        : "WATER IN MOTION";
-  $("streak").textContent =
-    r.streak >= 5
-      ? `IN THE FLOW · ×${decimal(1.5 + (game.permanent().combo || 0))}`
-      : `FIND YOUR FLOW · ${r.streak} / 5`;
-  $("streak").classList.toggle("active", r.streak >= 5);
-  $("pause").textContent =
-    r.mode === "complete"
-      ? "Next expedition →"
-      : r.mode === "paused"
-        ? "Resume →"
-        : "Pause";
-  $("scene").classList.toggle(
-    "automated",
-    !game.blocked && !dialog.element.open && rates.auto > 0,
-  );
-  $("village").style.opacity = 0.4 + (0.6 * percent) / 100;
-  for (const u of upgrades) {
-    const b = $(`upgrade-${u.id}`);
-    b.querySelector(".level").textContent = `LV ${r.levels[u.id] || 0}`;
-    b.querySelector(".upgrade-price").textContent =
-      `${fmt(game.cost(u.id))} L ↗`;
-    b.disabled =
-      game.blocked || dialog.element.open || r.wallet < game.cost(u.id);
-    b.classList.toggle("affordable", !b.disabled);
-  }
-  $("milestones").innerHTML = [25, 50, 75]
-    .map(
-      (n) =>
-        `<span class="mile ${r.milestones.includes(n) ? "done" : ""}">${r.milestones.includes(n) ? "✓ " : ""}${n}%</span>`,
-    )
-    .join("");
-  $("effects").replaceChildren(
-    ...r.effects.map((e) => {
-      const span = document.createElement("span");
-      span.className = "effect";
-      const mods = [
-        ["production", "production"],
-        ["manual", "manual"],
-        ["auto", "automation"],
-        ["cost", "equipment cost"],
-      ]
-        .filter(([key]) => e[key] !== undefined)
-        .map(
-          ([key, label]) =>
-            `${Math.round((e[key] - 1) * 100) > 0 ? "+" : ""}${Math.round((e[key] - 1) * 100)}% ${label}`,
-        )
-        .join(", ");
-      span.textContent = `${e.name}: ${mods} · ${Math.ceil(e.left)}s`;
-      return span;
-    }),
-  );
-  $("journal").replaceChildren(
-    ...(r.log.length
-      ? r.log
-      : ["A new expedition. Make your first drop count."]
-    )
-      .slice(0, 3)
-      .map((text) => {
-        const p = document.createElement("p");
-        p.textContent = text;
-        return p;
-      }),
-  );
-}
+const render = createGameView(game, dialog);
+
 function dismiss() {
   dialog.close();
   menu = null;
@@ -185,15 +72,24 @@ function dismiss() {
   sync();
   persist();
 }
-function sync() {
+let lastRendered = 0;
+function sync(force = true) {
   const pending = game.run?.pending;
   if (!menu && pending && shown !== pending) {
     shown = pending;
+    force = true;
     if (pending.type === "milestone") showMilestone(pending);
     else if (pending.type === "event") showEvent(pending);
     else showResults();
   }
-  render();
+  const now = performance.now();
+  if (
+    force ||
+    (!game.blocked && !dialog.element.open && now - lastRendered >= 100)
+  ) {
+    render();
+    lastRendered = now;
+  }
 }
 function showMilestone(p) {
   audio.play("milestone");
@@ -411,7 +307,7 @@ $("restart").onclick = () => {
     eyebrow: "START AGAIN / KEEP YOUR KNOWLEDGE",
     title: "A fresh start?",
     description:
-      "This expeditionï¿½s water, equipment and effects will reset. Permanent skills and knowledge stay with you.",
+      "This project will restart with no water, equipment or temporary effects. Permanent skills and knowledge stay with you.",
     items: [
       {
         id: "restart",
@@ -472,7 +368,7 @@ function loop(now) {
   const dt = (now - last) / 1000;
   last = now;
   if (!dialog.element.open && !document.hidden) game.tick(dt);
-  sync();
+  sync(false);
   if (now - saveTime > 3000) {
     persist();
     saveTime = now;

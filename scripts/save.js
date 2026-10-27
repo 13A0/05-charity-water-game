@@ -28,6 +28,9 @@ export function validate(s) {
     throw Error("Invalid progression");
   if (
     !Array.isArray(s.offers) ||
+    s.offers.length > 3 ||
+    new Set(s.offers.map((p) => (typeof p === "string" ? p : p?.id))).size !==
+      s.offers.length ||
     !s.offers.every((p) =>
       typeof p === "string"
         ? projects.some((t) => t.id === p)
@@ -56,7 +59,7 @@ export function validate(s) {
         throw Error("Mismatched project");
     }
     if (
-      !projects.some((p) => p.id === r.project) ||
+      (!r.projectSnapshot && !projects.some((p) => p.id === r.project)) ||
       !["running", "paused", "complete"].includes(r.mode)
     )
       throw Error("Invalid project");
@@ -73,9 +76,13 @@ export function validate(s) {
       "streak",
     ])
       if (!nonnegative(r[k])) throw Error("Invalid run counter");
+    for (const key of ["pumps", "eventCount", "reward", "streak"])
+      if (!int(r[key])) throw Error("Invalid integer counter");
+    if (r.streak > 5) throw Error("Invalid streak");
     if (!Number.isFinite(r.lastTap)) throw Error("Invalid tap");
     if (
       !r.levels ||
+      Array.isArray(r.levels) ||
       !Object.entries(r.levels).every(
         ([k, v]) => upgrades.some((u) => u.id === k) && int(v) && v <= 100,
       )
@@ -92,6 +99,7 @@ export function validate(s) {
       new Set(r.milestones).size !== r.milestones.length ||
       !r.milestones.every((n) => [25, 50, 75].includes(n)) ||
       !Array.isArray(r.queue) ||
+      new Set(r.queue).size !== r.queue.length ||
       !r.queue.every((n) => r.milestones.includes(n))
     )
       throw Error("Invalid milestones");
@@ -124,6 +132,8 @@ export function validate(s) {
           !r.milestones.includes(p.percent) ||
           !Array.isArray(p.choices) ||
           p.choices.length !== 3 ||
+          new Set(p.choices).size !== p.choices.length ||
+          r.queue.includes(p.percent) ||
           !p.choices.every((id) => rewards.some((b) => b.id === id))
         )
           throw Error("Invalid choice");
@@ -133,6 +143,17 @@ export function validate(s) {
         throw Error("Invalid dialog");
     }
   }
+  if (r) {
+    const pendingMilestone = r.pending?.type === "milestone" ? 1 : 0;
+    if (
+      r.bonuses.length + r.queue.length + pendingMilestone !==
+      r.milestones.length
+    )
+      throw Error("Inconsistent milestone rewards");
+    if (r.mode === "complete" && r.pending?.type !== "complete")
+      throw Error("Missing completion summary");
+  }
+
   return s;
 }
 export function load(storage) {
@@ -170,4 +191,21 @@ export function save(storage, state) {
   } catch {
     return false;
   }
+}
+
+// Cache only successful writes; storage failures remain retryable.
+export function createSaveWriter(storage) {
+  let previous = null;
+  return (state) => {
+    try {
+      const serialized = JSON.stringify(state);
+      if (serialized !== previous) {
+        storage.setItem(KEY, serialized);
+        previous = serialized;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
 }
