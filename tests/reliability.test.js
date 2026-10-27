@@ -101,3 +101,14 @@ test("unchanged saves avoid storage writes; failed writes are retried", () => {
   assert(write(state));
   assert.equal(writes, 4);
 });
+
+test("primitive upgrade maps are rejected before purchases can crash", () => {
+  for (const levels of [42, true, "not-an-upgrade-map", null]) {
+    const game = setup();
+    game.run.levels = levels;
+    assert.throws(() => validate(game.state), /Invalid upgrades/);
+  }
+  const game = setup();
+  game.run.levels = { handle: 2, solar: 1 };
+  assert(validate(game.state));
+});

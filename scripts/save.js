@@ -82,6 +82,7 @@ export function validate(s) {
     if (!Number.isFinite(r.lastTap)) throw Error("Invalid tap");
     if (
       !r.levels ||
+      typeof r.levels !== "object" ||
       Array.isArray(r.levels) ||
       !Object.entries(r.levels).every(
         ([k, v]) => upgrades.some((u) => u.id === k) && int(v) && v <= 100,
