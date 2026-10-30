@@ -99,7 +99,7 @@ All time is active-play time. Menus, pause and hidden tabs freeze production, ev
 
 ## Popup input protection
 
-The dialog moves focus from the pump, blocks gameplay, and waits for released controls plus 450 ms of input quiet, with a minimum 650 ms settling interval. Only fresh pointer-down or non-repeated activation keys authorize button clicks. Selecting a choice never applies it: a separate confirmation gesture is required after another settling interval. Repeated taps in the original pump/choice location cannot commit a reward. Escape cannot skip mandatory decisions; other screens have explicit return controls.
+The dialog moves focus from the pump, blocks gameplay, and waits once on opening for released controls plus 450 ms of input quiet, with a minimum 650 ms settling interval. Only fresh pointer-down or non-repeated activation keys authorize button clicks. After this initial guard, choices can be selected and switched immediately without restarting the delay. Selecting a choice never applies it: a separate confirmation gesture is required and is available immediately. Repeated taps in the original pump/choice location cannot commit a reward. Escape cannot skip mandatory decisions; other screens have explicit return controls.
 
 ## Test
 

@@ -83,10 +83,40 @@ test("rapid input cannot accept a decision and selection needs a distinct confir
   ).toBeDisabled();
   await expect(page.locator("#dialog")).toBeVisible();
   await button.click();
-  await expect(page.getByRole("button", { name: /^Confirm:/ })).toBeDisabled();
+  expect(
+    await page.getByRole("button", { name: /^Confirm:/ }).isEnabled(),
+  ).toBe(true);
   await page.getByRole("button", { name: /^Confirm:/ }).click();
   await expect(page.locator("#dialog")).not.toBeVisible();
 });
+test("choices can switch and confirm immediately after the opening guard", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto("/");
+  const choices = page.locator(".choice");
+  await expect(choices.first()).toBeEnabled();
+  // Freeze time so action auto-waiting cannot hide a restarted guard.
+  await page.clock.pauseAt(new Date(Date.now() + 1000));
+  for (const index of [0, 1, 2, 0]) {
+    await choices.nth(index).click();
+    expect(await choices.nth(index).getAttribute("aria-pressed")).toBe("true");
+    expect(await page.locator(".choice:disabled").count()).toBe(0);
+    expect(
+      await page.getByRole("button", { name: /^Confirm:/ }).isEnabled(),
+    ).toBe(true);
+  }
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await choices.nth(1).focus();
+  await page.keyboard.press("Enter");
+  expect(await choices.nth(1).getAttribute("aria-pressed")).toBe("true");
+  const confirm = page.getByRole("button", { name: /^Confirm:/ });
+  expect(await confirm.isEnabled()).toBe(true);
+  await confirm.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#dialog")).not.toBeVisible();
+});
+
 test("mobile layout, touch input, field guide, skill navigation and pause", async ({
   browser,
 }) => {

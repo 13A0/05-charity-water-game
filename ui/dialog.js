@@ -47,7 +47,7 @@ export class Dialog {
     );
     window.addEventListener("blur", () => {
       this.held.clear();
-      this.disarm();
+      this.epoch++;
     });
     element.addEventListener("cancel", (e) => e.preventDefault());
     element.addEventListener(
@@ -160,7 +160,7 @@ export class Dialog {
           b.setAttribute("aria-pressed", "true");
           confirm.textContent = `Confirm: ${item.name}`;
           confirm.dataset.unavailable = "false";
-          this.disarm();
+          confirm.disabled = false;
         },
         item.disabled,
         "choice",
