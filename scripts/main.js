@@ -337,15 +337,17 @@ $("sound").onclick = () => {
   audio.play("ui");
 };
 document.addEventListener("keydown", (e) => {
-  if (dialog.element.open || e.repeat) return;
+  if (dialog.element.open || e.altKey || e.ctrlKey || e.metaKey) return;
   if (
-    e.code === "Space" &&
-    !["BUTTON", "A", "INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)
-  ) {
+    e.target.isContentEditable ||
+    ["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)
+  )
+    return;
+  if (e.code === "Space" && !["BUTTON", "A"].includes(e.target.tagName)) {
     e.preventDefault();
-    pumpKey = e.code;
+    if (!e.repeat) pumpKey = e.code;
   }
-  if (e.code === "KeyP") toggle();
+  if (e.code === "KeyP" && !e.repeat) toggle();
 });
 document.addEventListener("keyup", (e) => {
   if (e.code === pumpKey) {

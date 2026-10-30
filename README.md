@@ -41,8 +41,6 @@ Open **http://127.0.0.1:5173**. Use HTTP rather than opening index.html directly
 | `img/`                                 | Original supplied branding and water-can images                   |
 | `tests/`                               | Gameplay/persistence tests and browser interaction tests          |
 
-The original root `script.js` and `styles.css` are legacy files and are not loaded by the game.
-
 ## Visual design
 
 The Riverlands art direction uses a charity: water yellow-and-white interface, charcoal pixel outlines, chunky framed controls, and original pixel scenery. Press Start 2P is used for display text; VT323 keeps gameplay information readable. Both fonts are bundled locally in `assets/fonts/`, with their SIL Open Font License files. No external font service is required. Motion respects reduced-motion preferences.
@@ -133,7 +131,7 @@ Add locations without copying mechanical modifiers. Add objective/condition defi
 
 The browser controller in `scripts/main.js` handles commands and menus. `ui/game-view.js` owns HUD rendering and caches its DOM references; `ui/format.js` shares number/time formatters. Automatic HUD updates run at 10 Hz, while clicks, purchases and new decisions render immediately. Paused/menu screens skip recurring HUD work. Milestones, effects and journal lists rebuild only when their visible content changes. Input-guard polling runs only while a dialog is waiting to become interactive.
 
-The simulation remains independent of the HUD refresh rate. It integrates at effect, streak and event boundaries, so changing frame duration cannot extend a production bonus or generate extra water before an event. Unchanged successful save payloads skip localStorage writes; failed writes are retried normally. Save validation checks milestone accounting and supports new generated locations independently of frozen legacy templates.
+The simulation remains independent of the HUD refresh rate. It integrates at effect, streak, event, milestone and completion boundaries without fixed-size substeps, so changing frame duration cannot extend a production bonus or generate extra water before a decision. Unchanged successful save payloads skip localStorage writes; failed writes are retried normally. Save validation checks milestone accounting, rejects future tap timestamps and supports new generated locations independently of frozen legacy templates. Asset preloads are deduplicated; replacing an animation clears its previous timer and sprite-sheet positioning. Turning sound off stops all playing cues.
 
 Project generation filters compact recipes, then builds only the three chosen display objects. The candidate ordering and random selection behavior are preserved. A local 200-set benchmark improved from approximately 1.94 seconds to 0.14 seconds; this is a machine-specific measurement, not a browser-wide performance guarantee.
 

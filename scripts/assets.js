@@ -2,27 +2,35 @@ import { assets, sounds } from "../data/assets.js";
 export class AssetManager {
   constructor() {
     this.timers = new WeakMap();
+    const sources = new Set();
     for (const a of Object.values(assets)) {
       for (const src of [
         a.src,
         ...(a.animation?.frames || []),
         a.animation?.sheet,
       ].filter(Boolean)) {
-        const image = new Image();
-        image.src = src;
+        sources.add(src);
       }
+    }
+    for (const src of sources) {
+      const image = new Image();
+      image.src = src;
     }
   }
   mount(element, id) {
+    clearInterval(this.timers.get(element));
+    this.timers.delete(element);
+    element.style.backgroundSize = "";
+    element.style.backgroundPosition = "";
     const a = assets[id];
     element.style.backgroundImage = `url("${a.src}")`;
     element.dataset.asset = id;
   }
   animate(element, id) {
+    this.mount(element, id);
     const a = assets[id],
       anim = a.animation;
     if (!anim || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    clearInterval(this.timers.get(element));
     let frame = 0;
     const draw = () => {
       if (anim.frames) {
@@ -39,9 +47,6 @@ export class AssetManager {
       () => {
         frame++;
         if (frame >= (anim.frames?.length || anim.count)) {
-          clearInterval(timer);
-          element.style.backgroundSize = "";
-          element.style.backgroundPosition = "";
           this.mount(element, id);
         } else draw();
       },
@@ -67,7 +72,7 @@ export class AudioManager {
   toggle() {
     this.enabled = !this.enabled;
     if (this.enabled) this.play("music");
-    else this.clips.music?.pause();
+    else for (const clip of Object.values(this.clips)) clip.pause();
     return this.enabled;
   }
   play(id) {

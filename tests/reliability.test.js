@@ -15,6 +15,33 @@ const setup = () => {
   return g;
 };
 
+test("automatic milestones and completion stop at the same boundary for every frame size", () => {
+  for (const target of [250, 500, 750, 1000]) {
+    for (const dt of [1, 0.016, 0.007]) {
+      const g = setup();
+      g.run.levels.solar = 1;
+      g.run.produced = target - 0.1;
+      g.run.milestones = [25, 50, 75].filter((n) => n * 10 < target);
+      // Wallet-only rewards keep production constant across scenarios.
+      g.run.bonuses = g.run.milestones.map(() => "supplies");
+      while (!g.run.pending) g.tick(dt);
+      assert.equal(g.run.produced, target);
+      assert(Math.abs(g.run.elapsed - 0.0125) < 1e-8);
+      assert.equal(
+        g.run.pending.type,
+        target === 1000 ? "complete" : "milestone",
+      );
+      assert(validate(g.state));
+    }
+  }
+});
+
+test("future tap timestamps cannot preserve a streak indefinitely after loading", () => {
+  const g = setup();
+  g.run.lastTap = 100;
+  assert.throws(() => validate(g.state), /Invalid tap/);
+});
+
 test("hybrid streak expiration produces the same water across different frame sizes", () => {
   const a = setup(),
     b = setup();

@@ -146,19 +146,35 @@ export class Game {
       const streakLeft = run.lastTap + STREAK_SECONDS - run.elapsed;
       if (streakLeft <= EPSILON) run.streak = 0;
       // Integrate only to the next state change, so frame size cannot extend bonuses.
-      let step = Math.min(remaining, 0.1, run.nextEvent - run.elapsed);
+      let step = Math.min(remaining, run.nextEvent - run.elapsed);
       if (run.streak > 0) step = Math.min(step, streakLeft);
       for (const effect of run.effects)
         if (effect.left > EPSILON) step = Math.min(step, effect.left);
       if (run.effects.some((effect) => effect.left <= EPSILON))
         run.effects = run.effects.filter((effect) => effect.left > EPSILON);
       const rate = this.rates().auto;
+      const milestone = [25, 50, 75].find(
+        (percent) => !run.milestones.includes(percent),
+      );
+      const target = milestone
+        ? (this.project.goal * milestone) / 100
+        : this.objectiveMet() && run.produced < this.project.goal
+          ? this.project.goal
+          : Infinity;
+      const waterLeft = target - run.produced;
+      const targetTime = rate > 0 ? waterLeft / rate : Infinity;
+      // Stop at decisions as well as timed effects; slow frames must not overshoot.
+      if (targetTime <= 0) {
+        this.check();
+        continue;
+      }
+      step = Math.min(step, targetTime);
       run.elapsed += step;
       for (const effect of run.effects) effect.left -= step;
       if (run.effects.some((effect) => effect.left <= EPSILON))
         run.effects = run.effects.filter((effect) => effect.left > EPSILON);
       if (run.elapsed - run.lastTap >= STREAK_SECONDS - EPSILON) run.streak = 0;
-      this.add(rate * step, "auto");
+      this.add(step === targetTime ? waterLeft : rate * step, "auto");
       remaining -= step;
       this.queueDueEvent();
     }

@@ -79,7 +79,8 @@ export function validate(s) {
     for (const key of ["pumps", "eventCount", "reward", "streak"])
       if (!int(r[key])) throw Error("Invalid integer counter");
     if (r.streak > 5) throw Error("Invalid streak");
-    if (!Number.isFinite(r.lastTap)) throw Error("Invalid tap");
+    if (!Number.isFinite(r.lastTap) || r.lastTap > r.elapsed)
+      throw Error("Invalid tap");
     if (
       !r.levels ||
       typeof r.levels !== "object" ||

@@ -15,6 +15,29 @@ async function start(page) {
   await choose(page);
   await expect(page.locator("#dialog")).not.toBeVisible();
 }
+
+test("held global Space prevents scrolling and pumps only on release", async ({
+  page,
+}) => {
+  await start(page);
+  await page.locator("#project-title").click();
+  const prevented = await page.evaluate(() => {
+    return [false, true].map((repeat) => {
+      const event = new KeyboardEvent("keydown", {
+        code: "Space",
+        bubbles: true,
+        cancelable: true,
+        repeat,
+      });
+      document.body.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
+  });
+  expect(prevented).toEqual([true, true]);
+  await expect(page.locator("#produced")).toHaveText("0");
+  await page.keyboard.up("Space");
+  await expect(page.locator("#produced")).toHaveText("10");
+});
 test("desktop: project choice, pumping, shop, all milestones, completion and permanent progression", async ({
   page,
 }) => {
