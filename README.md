@@ -36,16 +36,20 @@ Open **http://127.0.0.1:5173**. Use HTTP rather than opening index.html directly
 | `data/project-generation.js`           | Difficulty tiers, independent objectives and condition budgets    |
 | `scripts/systems/project-generator.js` | Recipe generation, variety history and recipe validation          |
 | `data/assets.js`                       | Artwork, animation and sound manifest                             |
-| `assets/placeholders/`                 | External SVG pump frames, landscape, village, water and equipment |
+| `assets/pixel/`                        | Original grid-aligned landscape, animated pump, village and icons |
 | `assets/audio/`                        | External placeholder WAV cues                                     |
 | `img/`                                 | Original supplied branding and water-can images                   |
 | `tests/`                               | Gameplay/persistence tests and browser interaction tests          |
 
 The original root `script.js` and `styles.css` are legacy files and are not loaded by the game.
 
+## Visual design
+
+The Riverlands art direction uses a charity: water yellow-and-white interface, charcoal pixel outlines, chunky framed controls, and original pixel scenery. Press Start 2P is used for display text; VT323 keeps gameplay information readable. Both fonts are bundled locally in `assets/fonts/`, with their SIL Open Font License files. No external font service is required. Motion respects reduced-motion preferences.
+
 ## Replace assets
 
-The placeholder SVGs are standalone image files, not artwork drawn by gameplay code. Replace them with PNG, WebP, SVG, GIF or other browser-supported images by editing **data/assets.js**. Transparent pump artwork should use the existing 400×350 aspect ratio for the easiest replacement.
+The original pixel SVGs are standalone image files, not artwork drawn by gameplay code. Regenerate them with `node scripts/build-pixel-art.js`. Replace them with PNG, WebP, SVG, GIF or other browser-supported images by editing **data/assets.js**. Transparent pump artwork should use the existing 100×88 aspect ratio for the easiest replacement.
 
 ```js
 // Static image

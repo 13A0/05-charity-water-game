@@ -239,8 +239,8 @@ test("pump art can be replaced through the manifest only", async ({ page }) => {
   await page.route("**/data/assets.js", async (route) => {
     const response = await route.fetch();
     const body = (await response.text()).replaceAll(
-      "assets/placeholders/pump-0.svg",
-      "assets/placeholders/solar.svg",
+      "assets/pixel/pump-0.svg",
+      "assets/pixel/solar.svg",
     );
     await route.fulfill({ response, body });
   });
@@ -290,4 +290,55 @@ test("paused HUD keeps list nodes and upgrades respond immediately", async ({
   await page.locator("#pause").click();
   await pumpClick(page);
   await expect(page.locator("#produced")).toHaveText("10");
+});
+
+test("pixel UI loads local art and fonts, and decision screens fit narrow phones", async ({
+  page,
+}) => {
+  const missing = [];
+  page.on("response", (response) => {
+    if (response.status() >= 400) missing.push(response.url());
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator(".choice").first()).toBeEnabled();
+  await page.screenshot({
+    path: "test-results/expedition-menu.png",
+    fullPage: true,
+  });
+  for (const width of [320, 390, 768]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(
+      await page
+        .locator("#dialog")
+        .evaluate((e) => e.scrollWidth <= e.clientWidth),
+    ).toBe(true);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await choose(page);
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.locator("#skills").click();
+  await expect(
+    page.getByRole("button", { name: "Return to expedition" }),
+  ).toBeEnabled();
+  expect(
+    await page
+      .locator("#dialog")
+      .evaluate((e) => e.scrollWidth <= e.clientWidth),
+  ).toBe(true);
+  await page.screenshot({
+    path: "test-results/narrow-skills.png",
+    fullPage: true,
+  });
+  expect(missing).toEqual([]);
 });
